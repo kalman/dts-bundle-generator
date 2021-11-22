@@ -16,4 +16,5 @@ export interface ExportedInterface {
 	field8: typeof starImportNameModule;
 }
 
+
 export {};

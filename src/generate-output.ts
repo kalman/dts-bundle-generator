@@ -127,7 +127,15 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers):
 		}
 	);
 
-	return printer.printFile(sourceFile).trim();
+	// (kalman) Insert blank lines between each top-level statement - interface,
+	// class, etc. I don't know a better way to do this.
+	const blankLineStatement = ts.factory.createExpressionStatement(ts.factory.createIdentifier('__BLANK_LINE__'));
+	const statements = [...sourceFile.statements];
+	for (let i = statements.length - 2; i >= 0; i--) {
+		statements.splice(i + 1, 0, blankLineStatement);
+	}
+	const sourceFile2 = ts.factory.updateSourceFile(sourceFile, statements, sourceFile.isDeclarationFile, sourceFile.referencedFiles, sourceFile.typeReferenceDirectives, sourceFile.hasNoDefaultLib, sourceFile.libReferenceDirectives);
+	return printer.printFile(sourceFile2).replace(/__BLANK_LINE__;/g, '');
 }
 
 function compareStatementText(a: StatementText, b: StatementText): number {

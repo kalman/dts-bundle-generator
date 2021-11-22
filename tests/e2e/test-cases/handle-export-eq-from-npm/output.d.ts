@@ -5,6 +5,8 @@ import { NamedDeclaration } from 'typescript';
 export declare class StoppableEventEmitter extends EventEmitter {
 	emitStoppableEvent(error: Error): this;
 }
+
 export declare type ExportType = SomeCoolInterface | NamedDeclaration | string;
+
 
 export {};
