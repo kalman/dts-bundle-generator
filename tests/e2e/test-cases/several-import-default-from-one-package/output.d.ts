@@ -8,4 +8,5 @@ export interface ExportedInterface {
 	field3: typeof DefaultClassRenamed2;
 }
 
+
 export {};

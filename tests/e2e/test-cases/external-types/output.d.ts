@@ -4,4 +4,5 @@ export interface InterfaceName {
 	prop: BrowserMocha;
 }
 
+
 export {};
