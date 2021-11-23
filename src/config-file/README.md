@@ -117,6 +117,12 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                  * This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.
                  */
                 exportReferencedTypes: true,
+
+                /**
+                 * Exports every exported declaration regardless of kind (interface, class, etc) but only if it's
+                 * currently exported. Overrides --export-referenced-types.
+                 */
+                reExportAllDeclarations: false,
             },
         },
     ],
@@ -130,45 +136,45 @@ Config file might be either JSON file or JS file with CommonJS export of the con
 
 ## Examples
 
-*JSON file*:
+_JSON file_:
 
 ```json
 {
-    "compilationOptions": {
-        "preferredConfigPath": "./tsconfig.json"
-    },
+  "compilationOptions": {
+    "preferredConfigPath": "./tsconfig.json"
+  },
 
-    "entries": [
-        {
-            "filePath": "./src/index.ts",
-            "outFile": "./out/index.d.ts",
-            "libraries": {
-                "inlinedLibraries": ["@my-company/package"]
-            },
-            "output": {
-                "inlineDeclareGlobals": false,
-                "sortNodes": true,
-                "umdModuleName": "MyModuleName"
-            }
-        },
-        {
-            "filePath": "./src/second.ts",
-            "outFile": "./out/second.d.ts",
-            "failOnClass": true,
-            "libraries": {
-                "allowedTypesLibraries": [],
-                "importedLibraries": [],
-                "inlinedLibraries": []
-            }
-        },
-        {
-            "filePath": "./src/third.ts"
-        }
-    ]
+  "entries": [
+    {
+      "filePath": "./src/index.ts",
+      "outFile": "./out/index.d.ts",
+      "libraries": {
+        "inlinedLibraries": ["@my-company/package"]
+      },
+      "output": {
+        "inlineDeclareGlobals": false,
+        "sortNodes": true,
+        "umdModuleName": "MyModuleName"
+      }
+    },
+    {
+      "filePath": "./src/second.ts",
+      "outFile": "./out/second.d.ts",
+      "failOnClass": true,
+      "libraries": {
+        "allowedTypesLibraries": [],
+        "importedLibraries": [],
+        "inlinedLibraries": []
+      }
+    },
+    {
+      "filePath": "./src/third.ts"
+    }
+  ]
 }
 ```
 
-*JS file*:
+_JS file_:
 
 ```js
 // @ts-check
@@ -177,37 +183,37 @@ Config file might be either JSON file or JS file with CommonJS export of the con
 
 /** @type import('dts-bundle-generator/config-schema').OutputOptions */
 const commonOutputParams = {
-    inlineDeclareGlobals: false,
-    sortNodes: true,
+  inlineDeclareGlobals: false,
+  sortNodes: true,
 };
 
 /** @type import('dts-bundle-generator/config-schema').BundlerConfig */
 const config = {
-    compilationOptions: {
-        preferredConfigPath: './tsconfig.json',
+  compilationOptions: {
+    preferredConfigPath: "./tsconfig.json",
+  },
+
+  entries: [
+    {
+      filePath: "./src/index.ts",
+      outFile: "./out/index.d.ts",
+      noCheck: false,
+
+      output: commonOutputParams,
     },
 
-    entries: [
-        {
-            filePath: './src/index.ts',
-            outFile: './out/index.d.ts',
-            noCheck: false,
+    {
+      filePath: "./src/second.ts",
+      outFile: "./out/second.d.ts",
+      failOnClass: true,
 
-            output: commonOutputParams,
-        },
+      libraries: {
+        inlinedLibraries: ["@my-company/package"],
+      },
 
-        {
-            filePath: './src/second.ts',
-            outFile: './out/second.d.ts',
-            failOnClass: true,
-
-            libraries: {
-                inlinedLibraries: ['@my-company/package'],
-            },
-
-            output: commonOutputParams,
-        },
-    ],
+      output: commonOutputParams,
+    },
+  ],
 };
 
 module.exports = config;
