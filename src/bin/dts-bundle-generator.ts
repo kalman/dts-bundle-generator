@@ -45,6 +45,7 @@ interface ParsedArgs extends yargs.Arguments {
 	'no-banner': boolean;
 	'respect-preserve-const-enum': boolean;
 	'export-referenced-types': boolean;
+	're-export-all-declarations': boolean;
 
 	'out-file': string | undefined;
 	'umd-module-name': string | undefined;
@@ -148,6 +149,11 @@ function parseArgs(): ParsedArgs {
 			default: true,
 			description: 'By default all interfaces, types and const enums are marked as exported even if they aren\'t exported directly. This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.',
 		})
+		.option('re-export-all-declarations', {
+			type: 'boolean',
+			default: false,
+			description: 'Exports every exported declaration regardless of kind (interface, class, etc) but only if it\'s currently exported. Overrides --export-referenced-types.',
+		})
 		.option('config', {
 			type: 'string',
 			description: 'File path to the generator config file',
@@ -216,6 +222,7 @@ function main(): void {
 						noBanner: args['no-banner'],
 						respectPreserveConstEnum: args['respect-preserve-const-enum'],
 						exportReferencedTypes: args['export-referenced-types'],
+						reExportAllDeclarations: args['re-export-all-declarations'],
 					},
 					failOnClass: args['fail-on-class'],
 				};
