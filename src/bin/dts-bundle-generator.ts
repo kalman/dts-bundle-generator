@@ -47,6 +47,7 @@ interface ParsedArgs extends yargs.Arguments {
 	'export-referenced-types': boolean;
 	're-export-all-declarations': boolean;
 	'exclude-private': boolean;
+	'exclude-jsdoc-tags': string[] | undefined;
 
 	'out-file': string | undefined;
 	'umd-module-name': string | undefined;
@@ -160,6 +161,11 @@ function parseArgs(): ParsedArgs {
 			default: false,
 			description: 'Excludes private methods and properties from class declarations.',
 		})
+		.option('exclude-jsdoc-tags', {
+			type: 'array',
+			description: 'Excludes any nodes with a jsdoc tag in this list. For example, "private" would be sensible.',
+			coerce: toStringsArray,
+		})
 		.option('config', {
 			type: 'string',
 			description: 'File path to the generator config file',
@@ -230,6 +236,7 @@ function main(): void {
 						exportReferencedTypes: args['export-referenced-types'],
 						reExportAllDeclarations: args['re-export-all-declarations'],
 						excludePrivate: args['exclude-private'],
+						excludeJSDocTags: args['exclude-jsdoc-tags'],
 					},
 					failOnClass: args['fail-on-class'],
 				};

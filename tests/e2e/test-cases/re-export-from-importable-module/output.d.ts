@@ -21,9 +21,9 @@ declare function defaultFunction(): void;
 export declare class MyClass {
 }
 
-export { Server } from "http";
+export { Server } from 'http';
 
-export * from "fs";
+export * from 'fs';
 
 
 export {

@@ -95,7 +95,7 @@ function statementsTextToString(statements: StatementText[], helpers: OutputHelp
 }
 
 function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, options: OutputOptions): string {
-	const sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+	const sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 	const printer = ts.createPrinter(
 		{
 			newLine: ts.NewLineKind.LineFeed,
@@ -103,6 +103,13 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, 
 		},
 		{
 			substituteNode: (hint: ts.EmitHint, node: ts.Node) => {
+				if (options.excludeJSDocTags?.length) {
+					const tagNames = ts.getJSDocTags(node).map(tag => tag.tagName.text);
+					if (options.excludeJSDocTags.find(tag => tagNames.includes(tag))) {
+						return ts.factory.createIdentifier('__DELETE_NODE__');
+					}
+				}
+
 				if (options.excludePrivate && ts.isClassDeclaration(node)) {
 					const nonPrivateMembers = node.members.filter(member =>
 						!member.modifiers?.find(mod => mod.kind === ts.SyntaxKind.PrivateKeyword));
@@ -139,7 +146,10 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, 
 		statements.splice(i + 1, 0, blankLineStatement);
 	}
 	const sourceFile2 = ts.factory.updateSourceFile(sourceFile, statements, sourceFile.isDeclarationFile, sourceFile.referencedFiles, sourceFile.typeReferenceDirectives, sourceFile.hasNoDefaultLib, sourceFile.libReferenceDirectives);
-	return printer.printFile(sourceFile2).replace(/__BLANK_LINE__;/g, '');
+	return printer.printFile(sourceFile2)
+		// (kalman) the DELETE_NODE regexp is more complicated than expected in order to preserve blank lines.
+		.replace(/(\n[ \t]+)?__DELETE_NODE__/g, '')
+		.replace(/__BLANK_LINE__;/g, '');
 }
 
 function compareStatementText(a: StatementText, b: StatementText): number {
