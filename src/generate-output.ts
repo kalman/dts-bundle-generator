@@ -2,6 +2,7 @@ import * as ts from 'typescript';
 
 import { hasNodeModifier } from './helpers/typescript';
 import { packageVersion } from './helpers/package-version';
+import { OutputOptions } from './bundle-generator';
 
 export interface ModuleImportsSet {
 	defaultImports: Set<string>;
@@ -24,13 +25,7 @@ export interface OutputHelpers {
 	needStripImportFromImportTypeNode(importType: ts.ImportTypeNode): boolean;
 }
 
-export interface OutputOptions {
-	umdModuleName?: string;
-	sortStatements?: boolean;
-	noBanner?: boolean;
-}
-
-export function generateOutput(params: OutputParams, options: OutputOptions = {}): string {
+export function generateOutput(params: OutputParams, options: OutputOptions): string {
 	let resultOutput = '';
 
 	if (!options.noBanner) {
@@ -60,11 +55,11 @@ export function generateOutput(params: OutputParams, options: OutputOptions = {}
 
 	const statements = params.statements.map((statement: ts.Statement) => getStatementText(statement, params));
 
-	if (options.sortStatements) {
+	if (options.sortNodes) {
 		statements.sort(compareStatementText);
 	}
 
-	resultOutput += statementsTextToString(statements, params);
+	resultOutput += statementsTextToString(statements, params, options);
 
 	if (params.renamedExports.length !== 0) {
 		resultOutput += `\n\nexport {\n\t${params.renamedExports.sort().join(',\n\t')},\n};`;
@@ -94,12 +89,12 @@ function statementTextToString(s: StatementText): string {
 	return `${s.leadingComment}\n${s.text}`;
 }
 
-function statementsTextToString(statements: StatementText[], helpers: OutputHelpers): string {
+function statementsTextToString(statements: StatementText[], helpers: OutputHelpers, options: OutputOptions): string {
 	const statementsText = statements.map(statementTextToString).join('\n');
-	return spacesToTabs(prettifyStatementsText(statementsText, helpers));
+	return spacesToTabs(prettifyStatementsText(statementsText, helpers, options));
 }
 
-function prettifyStatementsText(statementsText: string, helpers: OutputHelpers): string {
+function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, options: OutputOptions): string {
 	const sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
 	const printer = ts.createPrinter(
 		{
@@ -108,6 +103,15 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers):
 		},
 		{
 			substituteNode: (hint: ts.EmitHint, node: ts.Node) => {
+				if (options.excludePrivate && ts.isClassDeclaration(node)) {
+					const nonPrivateMembers = node.members.filter(member =>
+						!member.modifiers?.find(mod => mod.kind === ts.SyntaxKind.PrivateKeyword));
+					if (nonPrivateMembers.length !== node.members.length) {
+						node = ts.factory.updateClassDeclaration(node,
+							node.decorators, node.modifiers, node.name, node.typeParameters, node.heritageClauses, nonPrivateMembers);
+					}
+				}
+
 				// `import('module').Qualifier` or `typeof import('module').Qualifier`
 				if (ts.isImportTypeNode(node) && node.qualifier !== undefined && helpers.needStripImportFromImportTypeNode(node)) {
 					if (node.isTypeOf) {

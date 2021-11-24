@@ -80,6 +80,7 @@ const configScheme: SchemeDescriptor<BundlerConfig> = {
 				respectPreserveConstEnum: schemaPrimitiveValues.boolean,
 				exportReferencedTypes: schemaPrimitiveValues.boolean,
 				reExportAllDeclarations: schemaPrimitiveValues.boolean,
+				excludePrivate: schemaPrimitiveValues.boolean,
 			},
 		},
 	],
