@@ -123,6 +123,11 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                  * currently exported. Overrides --export-referenced-types.
                  */
                 reExportAllDeclarations: false,
+
+                /**
+                 * Excludes private methods and properties from class declarations.
+                 */
+                excludePrivate: false,
             },
         },
     ],

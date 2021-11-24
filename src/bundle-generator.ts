@@ -99,6 +99,11 @@ export interface OutputOptions {
 	 * etc) but only if it's currently exported. Overrides --export-referenced-types.
 	 */
 	reExportAllDeclarations?: boolean;
+
+	/**
+	 * Excludes private methods and properties from class declarations.
+	 */
+	excludePrivate?: boolean;
 }
 
 export interface LibrariesOptions {
@@ -342,12 +347,7 @@ export function generateDtsBundle(entries: readonly EntryPointConfig[], options:
 					const moduleFileName = resolveModuleFileName(rootSourceFile.fileName, node.argument.literal.text);
 					return !getModuleInfo(moduleFileName, criteria).isExternal;
 				},
-			},
-			{
-				sortStatements: outputOptions.sortNodes,
-				umdModuleName: outputOptions.umdModuleName,
-				noBanner: outputOptions.noBanner,
-			}
+			}, outputOptions
 		);
 	});
 }
