@@ -82,6 +82,7 @@ const configScheme: SchemeDescriptor<BundlerConfig> = {
 				reExportAllDeclarations: schemaPrimitiveValues.boolean,
 				excludePrivate: schemaPrimitiveValues.boolean,
 				excludeJSDocTags: [schemaPrimitiveValues.string],
+				includeJSDocTags: [schemaPrimitiveValues.string],
 			},
 		},
 	],
