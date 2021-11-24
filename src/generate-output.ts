@@ -95,17 +95,30 @@ function statementsTextToString(statements: StatementText[], helpers: OutputHelp
 }
 
 function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, options: OutputOptions): string {
-	const sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+	let sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 	const printer = ts.createPrinter(
 		{
 			newLine: ts.NewLineKind.LineFeed,
 			removeComments: false,
 		},
 		{
+			// eslint-disable-next-line complexity
 			substituteNode: (hint: ts.EmitHint, node: ts.Node) => {
 				if (options.excludeJSDocTags?.length) {
-					const tagNames = ts.getJSDocTags(node).map(tag => tag.tagName.text);
-					if (options.excludeJSDocTags.find(tag => tagNames.includes(tag))) {
+					if (findJSDocTags(node, options.excludeJSDocTags)) {
+						return ts.factory.createIdentifier('__DELETE_NODE__');
+					}
+				}
+
+				if (options.includeJSDocTags?.length && !ts.isSourceFile(node)) {
+					let include = false;
+					for (let n: ts.Node = node; n; n = n.parent) {
+						if (findJSDocTags(n, options.includeJSDocTags)) {
+							include = true;
+							break;
+						}
+					}
+					if (!include) {
 						return ts.factory.createIdentifier('__DELETE_NODE__');
 					}
 				}
@@ -145,11 +158,23 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, 
 	for (let i = statements.length - 2; i >= 0; i--) {
 		statements.splice(i + 1, 0, blankLineStatement);
 	}
-	const sourceFile2 = ts.factory.updateSourceFile(sourceFile, statements, sourceFile.isDeclarationFile, sourceFile.referencedFiles, sourceFile.typeReferenceDirectives, sourceFile.hasNoDefaultLib, sourceFile.libReferenceDirectives);
-	return printer.printFile(sourceFile2)
+
+	sourceFile = ts.factory.updateSourceFile(sourceFile, statements, sourceFile.isDeclarationFile, sourceFile.referencedFiles, sourceFile.typeReferenceDirectives, sourceFile.hasNoDefaultLib, sourceFile.libReferenceDirectives);
+	let sourceCode = printer.printFile(sourceFile)
 		// (kalman) the DELETE_NODE regexp is more complicated than expected in order to preserve blank lines.
 		.replace(/(\n[ \t]+)?__DELETE_NODE__/g, '')
 		.replace(/__BLANK_LINE__;/g, '');
+
+	if (options.includeJSDocTags?.length) {
+		// (kalman) Remove any jsdoc comments that are only created from whitespace and include tags.
+		const cleanStrings = [
+			'\\s',
+			...options.includeJSDocTags.map(tag => '@' + tag)];
+		const cleanRegExp = new RegExp('/\\*\\*((' + cleanStrings.join(')|(') + '))+\\*/\\s?', 'g');
+		sourceCode = sourceCode.replace(cleanRegExp, '');
+	}
+
+	return sourceCode;
 }
 
 function compareStatementText(a: StatementText, b: StatementText): number {
@@ -261,4 +286,9 @@ function spacesToTabs(text: string): string {
 	return text.replace(/^(    )+/gm, (substring: string) => {
 		return '\t'.repeat(substring.length / 4);
 	});
+}
+
+function findJSDocTags(node: ts.Node, tags: string[]): string | undefined {
+	const tagNames = ts.getJSDocTags(node).map(tag => tag.tagName.text);
+	return tags.find(tag => tagNames.includes(tag));
 }

@@ -109,6 +109,12 @@ export interface OutputOptions {
 	 * Excludes any nodes with a jsdoc tag in this list. For example, ["private"] would be sensible.
 	 */
 	excludeJSDocTags?: string[];
+
+	/**
+	 * Only include nodes which have one of the jsdoc tags in this list on a parent node.
+	 * Nodes that are excluded via --exclude-jsdoc-tags are not included.
+	 */
+	includeJSDocTags?: string[];
 }
 
 export interface LibrariesOptions {
