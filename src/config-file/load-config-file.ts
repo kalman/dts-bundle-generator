@@ -81,6 +81,7 @@ const configScheme: SchemeDescriptor<BundlerConfig> = {
 				exportReferencedTypes: schemaPrimitiveValues.boolean,
 				reExportAllDeclarations: schemaPrimitiveValues.boolean,
 				excludePrivate: schemaPrimitiveValues.boolean,
+				excludeJSDocTags: [schemaPrimitiveValues.string],
 			},
 		},
 	],

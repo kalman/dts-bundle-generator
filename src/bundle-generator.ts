@@ -104,6 +104,11 @@ export interface OutputOptions {
 	 * Excludes private methods and properties from class declarations.
 	 */
 	excludePrivate?: boolean;
+
+	/**
+	 * Excludes any nodes with a jsdoc tag in this list. For example, ["private"] would be sensible.
+	 */
+	excludeJSDocTags?: string[];
 }
 
 export interface LibrariesOptions {

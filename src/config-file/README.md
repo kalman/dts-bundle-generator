@@ -128,6 +128,11 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                  * Excludes private methods and properties from class declarations.
                  */
                 excludePrivate: false,
+
+                /**
+                 * Excludes any nodes with a jsdoc tag in this list. For example, ["private"] would be sensible.
+                 */
+                excludeJSDocTags?: string[];
             },
         },
     ],
