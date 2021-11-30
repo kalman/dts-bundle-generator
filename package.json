@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "dts-bundle-generator",
-  "version": "6.1.0",
-  "description": "DTS Bundle Generator",
+  "name": "@quip/dts-bundle-generator",
+  "version": "6.1.1",
+  "description": "DTS Bundle Generator (Quip)",
   "main": "dist/bundle-generator.js",
   "typings": "dist/bundle-generator.d.ts",
   "bin": "dist/bin/dts-bundle-generator.js",
@@ -13,9 +13,9 @@
   ],
   "author": "Evgeniy Timokhov",
   "bugs": {
-    "url": "https://github.com/timocov/dts-bundle-generator/issues"
+    "url": "https://github.com/quip/dts-bundle-generator/issues"
   },
-  "homepage": "https://github.com/timocov/dts-bundle-generator",
+  "homepage": "https://github.com/quip/dts-bundle-generator",
   "dependencies": {
     "typescript": ">=3.0.1",
     "yargs": "^17.2.1"
@@ -40,7 +40,7 @@
   "readme": "README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/timocov/dts-bundle-generator.git"
+    "url": "git+https://github.com/quip/dts-bundle-generator.git"
   },
   "engines": {
     "node": ">=12.0.0"
