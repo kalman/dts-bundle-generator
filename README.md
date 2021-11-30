@@ -1,5 +1,65 @@
 <!-- markdownlint-disable MD033 -->
 
+## Quip instructions
+
+We keep the master branch in sync with the original timocov project
+(with the exception of the commit that modified this README)
+then use branches named after each released version alongside tags.
+
+Here are instructions for how to checkout, modify, and publish the code:
+
+```sh
+# If you haven't added the original project as a remote already.
+> git remote add timocov https://github.com/timocov/dts-bundle-generator
+
+# If you haven't logged into npm already.
+> npm login
+username: ospreyquip
+password: p4ssw0rd # get the real password from LastPass :-)
+email: ospreyquip@gmail.com
+
+# 1. Fetch the newest version.
+> git fetch -a
+
+# 2. Fast-forward our master.
+> git checkout master
+> git rebase timocov/master
+> git push -f
+
+# 3. Check out the most recent quip branch.
+> git tag | grep quip- | tail -n1
+quip-v6.1.0
+> git checkout quip-v6.1.0
+
+# 4. Create a new branch to make changes. If the minor version
+# has incremented, just use that. Otherwise bump the patch version.
+> git checkout -b quip-v6.2.0   # if minor version changed
+> git checkout -b quip-v6.1.1   # if minor version didn't change
+
+# 5. Rebase onto master to get the most recent version of the code.
+# There will probably be some package.json conflicts, but we're
+# about to resolve that.
+> git rebase master
+
+# 6. Set the version of the package to correspond to the version
+# that you used in step 4.
+> vim package.json
+
+# 7. Make your changes, commit, then tag with our new version.
+> git commit -am "Made changes XYZ"
+> git tag quip-v6.2.0
+> git push --tags
+
+# 8. When you're ready to release, test your code, then publish.
+> npm test
+> npm run prepare-release
+> npm publish
+
+# 9. The prepare-release step above will have modified package.json,
+# so restore it back again.
+> git checkout HEAD package.json
+```
+
 <div align="center">
   <a href="https://github.com/timocov/dts-bundle-generator">
     <img width="250px" height="250px" src="https://github.com/timocov/dts-bundle-generator/raw/master/.github/logo.svg?sanitize=true">
@@ -28,21 +88,20 @@ export class B {}
 
 ```ts
 // entry.ts
-import { A } from './a';
-import { B } from './b';
+import { A } from "./a";
+import { B } from "./b";
 
 declare function makeA(): A;
 export function makeB(): B {
-    makeA();
-    return new B();
+  makeA();
+  return new B();
 }
 ```
 
 When you run `dts-bundle-generator -o my.d.ts entry.ts` in `my.d.ts` you will get the following:
 
 ```ts
-declare class B {
-}
+declare class B {}
 export declare function makeB(): B;
 ```
 
@@ -50,15 +109,15 @@ export declare function makeB(): B;
 
 1. Install the package from `npm`:
 
-    ```bash
-    npm install --save-dev dts-bundle-generator
-    ```
+   ```bash
+   npm install --save-dev dts-bundle-generator
+   ```
 
-    or
+   or
 
-    ```bash
-    npm install -g dts-bundle-generator
-    ```
+   ```bash
+   npm install -g dts-bundle-generator
+   ```
 
 1. Enable `declaration` compiler option in `tsconfig.json`
 
@@ -145,16 +204,14 @@ Yeah, you can use `outFile` (for `amd` and `system`), but generated code looks l
 
 ```ts
 declare module "a" {
-    export class A {
-    }
+  export class A {}
 }
 declare module "b" {
-    export class B {
-    }
+  export class B {}
 }
 declare module "entry" {
-    import { B } from "b";
-    export function makeB(): B;
+  import { B } from "b";
+  export function makeB(): B;
 }
 ```
 
@@ -169,7 +226,6 @@ but:
 
 [ci-img]: https://github.com/timocov/dts-bundle-generator/workflows/CI%20Test/badge.svg?branch=master
 [ci-link]: https://github.com/timocov/dts-bundle-generator/actions?query=branch%3Amaster
-
 [npm-version-img]: https://badge.fury.io/js/dts-bundle-generator.svg
 [npm-downloads-img]: https://img.shields.io/npm/dm/dts-bundle-generator.svg
 [npm-link]: https://www.npmjs.com/package/dts-bundle-generator
