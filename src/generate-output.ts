@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as process from 'process';
 import * as ts from 'typescript';
 
 import { hasNodeModifier } from './helpers/typescript';
@@ -53,7 +56,30 @@ export function generateOutput(params: OutputParams, options: OutputOptions): st
 		}
 	}
 
-	const statements = params.statements.map((statement: ts.Statement) => getStatementText(statement, params));
+	const statements = params.statements
+		.filter(statement => {
+			if (!options.includePaths) {
+				return true;
+			}
+			const relPath = path.relative(process.cwd(), statement.getSourceFile().fileName);
+			for (const includePath of options.includePaths) {
+				const stat = fs.statSync(includePath);
+				if (stat.isDirectory() &&
+					relPath.startsWith(path.normalize(includePath + path.sep))) {
+					return true;
+				}
+				if (stat.isFile() && (
+					relPath === includePath ||
+					// If includePath is a TypeScript file then also look for a
+					// type declaration file of the same name, since that's
+					// probably what it has been included as.
+					relPath === includePath.replace(/\.ts$/, '.d.ts'))) {
+					return true;
+				}
+			}
+			return false;
+		})
+		.map(statement => getStatementText(statement, params));
 
 	if (options.sortNodes) {
 		statements.sort(compareStatementText);

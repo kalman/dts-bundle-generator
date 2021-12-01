@@ -115,6 +115,11 @@ export interface OutputOptions {
 	 * Nodes that are excluded via --exclude-jsdoc-tags are not included.
 	 */
 	includeJSDocTags?: string[];
+
+	/**
+	 * Only include nodes in source files that either match these paths, or are a descendant of one of these paths.
+	 */
+	includePaths?: string[];
 }
 
 export interface LibrariesOptions {

@@ -49,6 +49,7 @@ interface ParsedArgs extends yargs.Arguments {
 	'exclude-private': boolean;
 	'exclude-jsdoc-tags': string[] | undefined;
 	'include-jsdoc-tags': string[] | undefined;
+	'include-paths': string[] | undefined;
 
 	'out-file': string | undefined;
 	'umd-module-name': string | undefined;
@@ -172,6 +173,11 @@ function parseArgs(): ParsedArgs {
 			description: 'Only include nodes which have one of the jsdoc tags in this list on a parent node. Nodes that are excluded via --exclude-jsdoc-tags are not included.',
 			coerce: toStringsArray,
 		})
+		.option('include-paths', {
+			type: 'array',
+			description: 'Only include nodes in source files that either match these paths, or are a descendant of one of these paths.',
+			coerce: toStringsArray,
+		})
 		.option('config', {
 			type: 'string',
 			description: 'File path to the generator config file',
@@ -244,6 +250,7 @@ function main(): void {
 						excludePrivate: args['exclude-private'],
 						excludeJSDocTags: args['exclude-jsdoc-tags'],
 						includeJSDocTags: args['include-jsdoc-tags'],
+						includePaths: args['include-paths'],
 					},
 					failOnClass: args['fail-on-class'],
 				};
