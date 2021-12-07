@@ -93,6 +93,33 @@ export interface OutputOptions {
 	 * This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.
 	 */
 	exportReferencedTypes?: boolean;
+
+	/**
+	 * Exports every exported declaration regardless of kind (interface, class,
+	 * etc) but only if it's currently exported. Overrides --export-referenced-types.
+	 */
+	reExportAllDeclarations?: boolean;
+
+	/**
+	 * Excludes private methods and properties from class declarations.
+	 */
+	excludePrivate?: boolean;
+
+	/**
+	 * Excludes any nodes with a jsdoc tag in this list. For example, ["private"] would be sensible.
+	 */
+	excludeJSDocTags?: string[];
+
+	/**
+	 * Only include nodes which have one of the jsdoc tags in this list on a parent node.
+	 * Nodes that are excluded via --exclude-jsdoc-tags are not included.
+	 */
+	includeJSDocTags?: string[];
+
+	/**
+	 * Only include nodes in source files that either match these paths, or are a descendant of one of these paths.
+	 */
+	includePaths?: string[];
 }
 
 export interface LibrariesOptions {
@@ -285,20 +312,26 @@ export function generateDtsBundle(entries: readonly EntryPointConfig[], options:
 						return shouldBeDefaultExportedDirectly || exp.exportedName === exp.originalName;
 					}) !== undefined;
 
+					if (!result) {
+						return false;
+					}
+
+					if (outputOptions.reExportAllDeclarations) {
+						return !!statement.modifiers?.find((mod: ts.Modifier) => mod.kind === ts.SyntaxKind.ExportKeyword);
+					}
+
 					// "direct export" means export from the root source file
 					// e.g. classes/functions/etc must be exported from the root source file to have an "export" keyword
 					// by default interfaces/types are exported even if they aren't directly exported (e.g. when they are referenced by other types)
 					// but if `exportReferencedTypes` option is disabled we have to check direct export for them either
-					const onlyDirectlyExportedShouldBeExported = !exportReferencedTypes
+					if (!exportReferencedTypes
 						|| ts.isClassDeclaration(statement)
 						|| (ts.isEnumDeclaration(statement) && !hasNodeModifier(statement, ts.SyntaxKind.ConstKeyword))
 						|| ts.isFunctionDeclaration(statement)
-						|| ts.isVariableStatement(statement);
-
-					if (onlyDirectlyExportedShouldBeExported) {
+						|| ts.isVariableStatement(statement)) {
 						// "valuable" statements must be re-exported from root source file
 						// to having export keyword in declaration file
-						result = result && statementExports.length !== 0;
+						result = statementExports.length !== 0;
 					} else if (isAmbientModule(statement) || ts.isExportDeclaration(statement)) {
 						result = false;
 					}
@@ -330,12 +363,7 @@ export function generateDtsBundle(entries: readonly EntryPointConfig[], options:
 					const moduleFileName = resolveModuleFileName(rootSourceFile.fileName, node.argument.literal.text);
 					return !getModuleInfo(moduleFileName, criteria).isExternal;
 				},
-			},
-			{
-				sortStatements: outputOptions.sortNodes,
-				umdModuleName: outputOptions.umdModuleName,
-				noBanner: outputOptions.noBanner,
-			}
+			}, outputOptions
 		);
 	});
 }

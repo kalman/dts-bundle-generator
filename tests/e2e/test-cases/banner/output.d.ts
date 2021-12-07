@@ -2,4 +2,5 @@
 
 export declare type TypeName = string | number;
 
+
 export {};

@@ -1,14 +1,21 @@
 declare class Class {
 }
+
 declare const enum ConstEnum {
 }
+
 declare const variable: string;
+
 declare enum Enum {
 }
+
 declare function func(): void;
+
 interface Interface {
 }
+
 declare type Type = string;
+
 export interface ExportedInterface {
 	class: Class;
 	constEnum: ConstEnum;
@@ -18,5 +25,6 @@ export interface ExportedInterface {
 	type: Type;
 	variable: typeof variable;
 }
+
 
 export {};

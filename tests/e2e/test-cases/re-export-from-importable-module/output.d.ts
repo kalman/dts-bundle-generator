@@ -1,20 +1,30 @@
 export interface SomeInterface {
 	field: string;
 }
+
 interface AnotherInterface {
 	field: number;
 }
+
 interface DefaultInterface {
 	field: boolean;
 }
+
 declare let letName: number;
+
 declare const constName = "const";
+
 declare function funcName(): void;
+
 declare function defaultFunction(): void;
+
 export declare class MyClass {
 }
-export { Server } from "http";
-export * from "fs";
+
+export { Server } from 'http';
+
+export * from 'fs';
+
 
 export {
 	AnotherInterface as Int2,

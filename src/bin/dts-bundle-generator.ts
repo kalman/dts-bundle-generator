@@ -45,6 +45,11 @@ interface ParsedArgs extends yargs.Arguments {
 	'no-banner': boolean;
 	'respect-preserve-const-enum': boolean;
 	'export-referenced-types': boolean;
+	're-export-all-declarations': boolean;
+	'exclude-private': boolean;
+	'exclude-jsdoc-tags': string[] | undefined;
+	'include-jsdoc-tags': string[] | undefined;
+	'include-paths': string[] | undefined;
 
 	'out-file': string | undefined;
 	'umd-module-name': string | undefined;
@@ -148,6 +153,31 @@ function parseArgs(): ParsedArgs {
 			default: true,
 			description: 'By default all interfaces, types and const enums are marked as exported even if they aren\'t exported directly. This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.',
 		})
+		.option('re-export-all-declarations', {
+			type: 'boolean',
+			default: false,
+			description: 'Exports every exported declaration regardless of kind (interface, class, etc) but only if it\'s currently exported. Overrides --export-referenced-types.',
+		})
+		.option('exclude-private', {
+			type: 'boolean',
+			default: false,
+			description: 'Excludes private methods and properties from class declarations.',
+		})
+		.option('exclude-jsdoc-tags', {
+			type: 'array',
+			description: 'Excludes any nodes with a jsdoc tag in this list. For example, "private" would be sensible.',
+			coerce: toStringsArray,
+		})
+		.option('include-jsdoc-tags', {
+			type: 'array',
+			description: 'Only include nodes which have one of the jsdoc tags in this list on a parent node. Nodes that are excluded via --exclude-jsdoc-tags are not included.',
+			coerce: toStringsArray,
+		})
+		.option('include-paths', {
+			type: 'array',
+			description: 'Only include nodes in source files that either match these paths, or are a descendant of one of these paths.',
+			coerce: toStringsArray,
+		})
 		.option('config', {
 			type: 'string',
 			description: 'File path to the generator config file',
@@ -216,6 +246,11 @@ function main(): void {
 						noBanner: args['no-banner'],
 						respectPreserveConstEnum: args['respect-preserve-const-enum'],
 						exportReferencedTypes: args['export-referenced-types'],
+						reExportAllDeclarations: args['re-export-all-declarations'],
+						excludePrivate: args['exclude-private'],
+						excludeJSDocTags: args['exclude-jsdoc-tags'],
+						includeJSDocTags: args['include-jsdoc-tags'],
+						includePaths: args['include-paths'],
 					},
 					failOnClass: args['fail-on-class'],
 				};

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as assert from 'assert';
+import * as process from 'process';
 
 import { generateDtsBundle } from '../../src/bundle-generator';
 
@@ -10,6 +11,7 @@ interface TestCase {
 	name: string;
 	inputFileName: string;
 	outputFileContent: string;
+	outputFileName: string;
 	config: TestCaseConfig;
 }
 
@@ -17,10 +19,6 @@ const testCasesDir = path.resolve(__dirname, 'test-cases');
 
 function isDirectory(filePath: string): boolean {
 	return fs.lstatSync(path.resolve(testCasesDir, filePath)).isDirectory();
-}
-
-function prepareString(str: string): string {
-	return str.trim().replace(/\r\n/g, '\n');
 }
 
 function getTestCases(): TestCase[] {
@@ -45,7 +43,8 @@ function getTestCases(): TestCase[] {
 				inputFileName,
 				// eslint-disable-next-line @typescript-eslint/no-var-requires
 				config: require(path.resolve(testCaseDir, 'config.ts')) as TestCaseConfig,
-				outputFileContent: prepareString(fs.readFileSync(outputFileName, 'utf-8')),
+				outputFileContent: fs.readFileSync(outputFileName, 'utf-8'),
+				outputFileName,
 			};
 
 			return result;
@@ -61,7 +60,7 @@ describe('Functional tests', () => {
 				outputOptions.noBanner = true;
 			}
 
-			const dtsResult = generateDtsBundle(
+			const result = generateDtsBundle(
 				[
 					{
 						...testCase.config,
@@ -70,8 +69,16 @@ describe('Functional tests', () => {
 					},
 				]
 			)[0];
-			const result = prepareString(dtsResult);
-			assert.strictEqual(result, testCase.outputFileContent, 'Output should be the same as expected');
+
+			if (process.env.UPDATE_SNAPSHOT) {
+				if (result !== testCase.outputFileContent) {
+					// eslint-disable-next-line no-console
+					console.log(testCase.name, 'output is different, rebasing to', testCase.outputFileName);
+					fs.writeFileSync(testCase.outputFileName, result);
+				}
+			} else {
+				assert.strictEqual(result, testCase.outputFileContent, 'Output should be the same as expected');
+			}
 		});
 	}
 });

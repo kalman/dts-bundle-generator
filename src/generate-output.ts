@@ -1,7 +1,11 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as process from 'process';
 import * as ts from 'typescript';
 
 import { hasNodeModifier } from './helpers/typescript';
 import { packageVersion } from './helpers/package-version';
+import { OutputOptions } from './bundle-generator';
 
 export interface ModuleImportsSet {
 	defaultImports: Set<string>;
@@ -24,13 +28,7 @@ export interface OutputHelpers {
 	needStripImportFromImportTypeNode(importType: ts.ImportTypeNode): boolean;
 }
 
-export interface OutputOptions {
-	umdModuleName?: string;
-	sortStatements?: boolean;
-	noBanner?: boolean;
-}
-
-export function generateOutput(params: OutputParams, options: OutputOptions = {}): string {
+export function generateOutput(params: OutputParams, options: OutputOptions): string {
 	let resultOutput = '';
 
 	if (!options.noBanner) {
@@ -58,13 +56,36 @@ export function generateOutput(params: OutputParams, options: OutputOptions = {}
 		}
 	}
 
-	const statements = params.statements.map((statement: ts.Statement) => getStatementText(statement, params));
+	const statements = params.statements
+		.filter(statement => {
+			if (!options.includePaths) {
+				return true;
+			}
+			const relPath = path.relative(process.cwd(), statement.getSourceFile().fileName);
+			for (const includePath of options.includePaths) {
+				const stat = fs.statSync(includePath);
+				if (stat.isDirectory() &&
+					relPath.startsWith(path.normalize(includePath + path.sep))) {
+					return true;
+				}
+				if (stat.isFile() && (
+					relPath === includePath ||
+					// If includePath is a TypeScript file then also look for a
+					// type declaration file of the same name, since that's
+					// probably what it has been included as.
+					relPath === includePath.replace(/\.ts$/, '.d.ts'))) {
+					return true;
+				}
+			}
+			return false;
+		})
+		.map(statement => getStatementText(statement, params));
 
-	if (options.sortStatements) {
+	if (options.sortNodes) {
 		statements.sort(compareStatementText);
 	}
 
-	resultOutput += statementsTextToString(statements, params);
+	resultOutput += statementsTextToString(statements, params, options);
 
 	if (params.renamedExports.length !== 0) {
 		resultOutput += `\n\nexport {\n\t${params.renamedExports.sort().join(',\n\t')},\n};`;
@@ -94,20 +115,49 @@ function statementTextToString(s: StatementText): string {
 	return `${s.leadingComment}\n${s.text}`;
 }
 
-function statementsTextToString(statements: StatementText[], helpers: OutputHelpers): string {
+function statementsTextToString(statements: StatementText[], helpers: OutputHelpers, options: OutputOptions): string {
 	const statementsText = statements.map(statementTextToString).join('\n');
-	return spacesToTabs(prettifyStatementsText(statementsText, helpers));
+	return spacesToTabs(prettifyStatementsText(statementsText, helpers, options));
 }
 
-function prettifyStatementsText(statementsText: string, helpers: OutputHelpers): string {
-	const sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+function prettifyStatementsText(statementsText: string, helpers: OutputHelpers, options: OutputOptions): string {
+	let sourceFile = ts.createSourceFile('output.d.ts', statementsText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 	const printer = ts.createPrinter(
 		{
 			newLine: ts.NewLineKind.LineFeed,
 			removeComments: false,
 		},
 		{
+			// eslint-disable-next-line complexity
 			substituteNode: (hint: ts.EmitHint, node: ts.Node) => {
+				if (options.excludeJSDocTags?.length) {
+					if (findJSDocTags(node, options.excludeJSDocTags)) {
+						return ts.factory.createIdentifier('__DELETE_NODE__');
+					}
+				}
+
+				if (options.includeJSDocTags?.length && !ts.isSourceFile(node)) {
+					let include = false;
+					for (let n: ts.Node = node; n; n = n.parent) {
+						if (findJSDocTags(n, options.includeJSDocTags)) {
+							include = true;
+							break;
+						}
+					}
+					if (!include) {
+						return ts.factory.createIdentifier('__DELETE_NODE__');
+					}
+				}
+
+				if (options.excludePrivate && ts.isClassDeclaration(node)) {
+					const nonPrivateMembers = node.members.filter(member =>
+						!member.modifiers?.find(mod => mod.kind === ts.SyntaxKind.PrivateKeyword));
+					if (nonPrivateMembers.length !== node.members.length) {
+						node = ts.factory.updateClassDeclaration(node,
+							node.decorators, node.modifiers, node.name, node.typeParameters, node.heritageClauses, nonPrivateMembers);
+					}
+				}
+
 				// `import('module').Qualifier` or `typeof import('module').Qualifier`
 				if (ts.isImportTypeNode(node) && node.qualifier !== undefined && helpers.needStripImportFromImportTypeNode(node)) {
 					if (node.isTypeOf) {
@@ -127,7 +177,30 @@ function prettifyStatementsText(statementsText: string, helpers: OutputHelpers):
 		}
 	);
 
-	return printer.printFile(sourceFile).trim();
+	// (kalman) Insert blank lines between each top-level statement - interface,
+	// class, etc. I don't know a better way to do this.
+	const blankLineStatement = ts.factory.createExpressionStatement(ts.factory.createIdentifier('__BLANK_LINE__'));
+	const statements = [...sourceFile.statements];
+	for (let i = statements.length - 2; i >= 0; i--) {
+		statements.splice(i + 1, 0, blankLineStatement);
+	}
+
+	sourceFile = ts.factory.updateSourceFile(sourceFile, statements, sourceFile.isDeclarationFile, sourceFile.referencedFiles, sourceFile.typeReferenceDirectives, sourceFile.hasNoDefaultLib, sourceFile.libReferenceDirectives);
+	let sourceCode = printer.printFile(sourceFile)
+		// (kalman) the DELETE_NODE regexp is more complicated than expected in order to preserve blank lines.
+		.replace(/(\n[ \t]+)?__DELETE_NODE__/g, '')
+		.replace(/__BLANK_LINE__;/g, '');
+
+	if (options.includeJSDocTags?.length) {
+		// (kalman) Remove any jsdoc comments that are only created from whitespace and include tags.
+		const cleanStrings = [
+			'\\s',
+			...options.includeJSDocTags.map(tag => '@' + tag)];
+		const cleanRegExp = new RegExp('/\\*\\*((' + cleanStrings.join(')|(') + '))+\\*/\\s?', 'g');
+		sourceCode = sourceCode.replace(cleanRegExp, '');
+	}
+
+	return sourceCode;
 }
 
 function compareStatementText(a: StatementText, b: StatementText): number {
@@ -239,4 +312,9 @@ function spacesToTabs(text: string): string {
 	return text.replace(/^(    )+/gm, (substring: string) => {
 		return '\t'.repeat(substring.length / 4);
 	});
+}
+
+function findJSDocTags(node: ts.Node, tags: string[]): string | undefined {
+	const tagNames = ts.getJSDocTags(node).map(tag => tag.tagName.text);
+	return tags.find(tag => tagNames.includes(tag));
 }
