@@ -89,6 +89,11 @@ export interface OutputOptions {
 	respectPreserveConstEnum?: boolean;
 
 	/**
+	 * Instead of declaring or preserving const enums, simply redefine them.
+	 */
+	reDefineConstEnum?: boolean;
+
+	/**
 	 * By default all interfaces, types and const enums are marked as exported even if they aren't exported directly.
 	 * This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.
 	 */

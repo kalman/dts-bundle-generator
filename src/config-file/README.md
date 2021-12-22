@@ -117,6 +117,11 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                  * This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.
                  */
                 exportReferencedTypes: true,
+                
+                /**
+                 * Instead of declaring or preserving const enums, simply redefine them.
+                 */
+                reDefineConstEnum: false,
 
                 /**
                  * Exports every exported declaration regardless of kind (interface, class, etc) but only if it's
@@ -132,13 +137,13 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                 /**
                  * Excludes any nodes with a jsdoc tag in this list. For example, ["private"] would be sensible.
                  */
-                excludeJSDocTags?: string[];
+                excludeJSDocTags: [],
 
                 /**
                  * Only include nodes which have one of the jsdoc tags in this list on a parent node.
                  * Nodes that are excluded via --exclude-jsdoc-tags are not included.
                  */
-                includeJSDocTags?: string[];
+                includeJSDocTags: [],
             },
         },
     ],
