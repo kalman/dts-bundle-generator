@@ -42,6 +42,3 @@ export declare type InputType = PrivateInputType & ModuleType;
 
 export declare class InputModuleClass extends ModuleClass {
 }
-
-
-export {};
