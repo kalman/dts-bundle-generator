@@ -79,7 +79,7 @@ export function generateOutput(params: OutputParams, options: OutputOptions): st
 			}
 			return false;
 		})
-		.map(statement => getStatementText(statement, params));
+		.map(statement => getStatementText(statement, params, options));
 
 	if (options.sortNodes) {
 		statements.sort(compareStatementText);
@@ -95,9 +95,12 @@ export function generateOutput(params: OutputParams, options: OutputOptions): st
 		resultOutput += `\n\nexport as namespace ${options.umdModuleName};`;
 	}
 
-	// this is used to prevent importing non-exported nodes
-	// see https://stackoverflow.com/questions/52583603/intentional-that-export-shuts-off-automatic-export-of-all-symbols-from-a-ty
-	resultOutput += `\n\nexport {};\n`;
+	if (!options.reExportAllDeclarations) {
+		// this is used to prevent importing non-exported nodes
+		// see https://stackoverflow.com/questions/52583603/intentional-that-export-shuts-off-automatic-export-of-all-symbols-from-a-ty
+		// Behind `options.reExportAllDeclarations` check to reduce probable noise.
+		resultOutput += `\n\nexport {};\n`;
+	}
 
 	return resultOutput;
 }
@@ -232,7 +235,12 @@ function needAddDeclareKeyword(statement: ts.Statement, nodeText: string): boole
 	return false;
 }
 
-function getStatementText(statement: ts.Statement, helpers: OutputHelpers): StatementText {
+function needStripDeclareKeyword(statement: ts.Statement, options: OutputOptions): boolean {
+	return ts.isEnumDeclaration(statement) && !!options.reDefineConstEnum;
+}
+
+// eslint-disable-next-line complexity
+function getStatementText(statement: ts.Statement, helpers: OutputHelpers, options: OutputOptions): StatementText {
 	const shouldStatementHasExportKeyword = helpers.shouldStatementHasExportKeyword(statement);
 	const needStripDefaultKeyword = helpers.needStripDefaultKeywordForStatement(statement);
 	const hasStatementExportKeyword = ts.isExportAssignment(statement) || hasNodeModifier(statement, ts.SyntaxKind.ExportKeyword);
@@ -255,6 +263,14 @@ function getStatementText(statement: ts.Statement, helpers: OutputHelpers): Stat
 
 	if (needAddDeclareKeyword(statement, nodeText)) {
 		nodeText = `declare ${nodeText}`;
+	}
+
+	if (needStripDeclareKeyword(statement, options)) {
+		if (nodeText.startsWith('declare ')) {
+			nodeText = nodeText.slice('declare '.length);
+		} else if (nodeText.startsWith('export declare ')) {
+			nodeText = 'export ' + nodeText.slice('export declare '.length);
+		}
 	}
 
 	const result: StatementText = {
