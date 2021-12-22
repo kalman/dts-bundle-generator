@@ -44,6 +44,7 @@ interface ParsedArgs extends yargs.Arguments {
 	'disable-symlinks-following': boolean;
 	'no-banner': boolean;
 	'respect-preserve-const-enum': boolean;
+	're-define-const-enum': boolean;
 	'export-referenced-types': boolean;
 	're-export-all-declarations': boolean;
 	'exclude-private': boolean;
@@ -142,6 +143,11 @@ function parseArgs(): ParsedArgs {
 			type: 'boolean',
 			default: false,
 			description: '(EXPERIMENTAL) Disables resolving of symlinks to the original path. See https://github.com/timocov/dts-bundle-generator/issues/39 for more information',
+		})
+		.option('re-define-const-enum', {
+			type: 'boolean',
+			default: false,
+			description: 'Instead of declaring or preserving const enums, simply redefine them',
 		})
 		.option('respect-preserve-const-enum', {
 			type: 'boolean',
@@ -245,6 +251,7 @@ function main(): void {
 						sortNodes: args.sort,
 						noBanner: args['no-banner'],
 						respectPreserveConstEnum: args['respect-preserve-const-enum'],
+						reDefineConstEnum: args['respect-preserve-const-enum'],
 						exportReferencedTypes: args['export-referenced-types'],
 						reExportAllDeclarations: args['re-export-all-declarations'],
 						excludePrivate: args['exclude-private'],
