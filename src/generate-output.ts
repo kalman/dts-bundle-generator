@@ -236,11 +236,11 @@ function needAddDeclareKeyword(statement: ts.Statement, nodeText: string): boole
 }
 
 function needStripDeclareKeyword(statement: ts.Statement, options: OutputOptions): boolean {
-	return Boolean(
-		ts.isEnumDeclaration(statement) &&
-		statement.modifiers?.find(mod => mod.kind === ts.SyntaxKind.ConstKeyword) &&
-		options.reDefineConstEnum
-	);
+	return isConstEnum(statement) && !!options.reDefineConstEnum;
+}
+
+function isConstEnum(statement: ts.Statement): statement is ts.EnumDeclaration {
+	return ts.isEnumDeclaration(statement) && hasNodeModifier(statement, ts.SyntaxKind.ConstKeyword);
 }
 
 // eslint-disable-next-line complexity
@@ -249,12 +249,13 @@ function getStatementText(statement: ts.Statement, helpers: OutputHelpers, optio
 	const needStripDefaultKeyword = helpers.needStripDefaultKeywordForStatement(statement);
 	const hasStatementExportKeyword = ts.isExportAssignment(statement) || hasNodeModifier(statement, ts.SyntaxKind.ExportKeyword);
 
+	if (isConstEnum(statement) && options.banConstEnum) {
+		throw new Error(`Saw banned const enum '${statement.name.getText()}'`);
+	}
+
 	let nodeText = getTextAccordingExport(statement.getText(), hasStatementExportKeyword, shouldStatementHasExportKeyword);
 
-	if (
-		ts.isEnumDeclaration(statement)
-		&& hasNodeModifier(statement, ts.SyntaxKind.ConstKeyword)
-		&& helpers.needStripConstFromConstEnum(statement)) {
+	if (isConstEnum(statement) && helpers.needStripConstFromConstEnum(statement)) {
 		nodeText = nodeText.replace(/\bconst\s/, '');
 	}
 

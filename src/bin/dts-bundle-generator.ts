@@ -45,6 +45,7 @@ interface ParsedArgs extends yargs.Arguments {
 	'no-banner': boolean;
 	'respect-preserve-const-enum': boolean;
 	're-define-const-enum': boolean;
+	'ban-const-enum': boolean;
 	'export-referenced-types': boolean;
 	're-export-all-declarations': boolean;
 	'exclude-private': boolean;
@@ -149,6 +150,11 @@ function parseArgs(): ParsedArgs {
 			default: false,
 			description: 'Instead of declaring or preserving const enums, simply redefine them',
 		})
+		.option('ban-const-enum', {
+			type: 'boolean',
+			default: false,
+			description: 'Ban const enums - if any const enum is encountered then bundle generation will fail',
+		})
 		.option('respect-preserve-const-enum', {
 			type: 'boolean',
 			default: false,
@@ -252,6 +258,7 @@ function main(): void {
 						noBanner: args['no-banner'],
 						respectPreserveConstEnum: args['respect-preserve-const-enum'],
 						reDefineConstEnum: args['re-define-const-enum'],
+						banConstEnum: args['ban-const-enum'],
 						exportReferencedTypes: args['export-referenced-types'],
 						reExportAllDeclarations: args['re-export-all-declarations'],
 						excludePrivate: args['exclude-private'],

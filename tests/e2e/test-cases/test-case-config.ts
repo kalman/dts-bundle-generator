@@ -1,6 +1,8 @@
 import { EntryPointConfig } from '../../../src/bundle-generator';
 
-export type TestCaseConfig = Pick<
+export type TestCaseConfig = {
+	errorMessage?: string
+} & Pick<
 	EntryPointConfig,
 	| 'libraries'
 	| 'failOnClass'

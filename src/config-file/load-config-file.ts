@@ -79,6 +79,7 @@ const configScheme: SchemeDescriptor<BundlerConfig> = {
 				noBanner: schemaPrimitiveValues.boolean,
 				respectPreserveConstEnum: schemaPrimitiveValues.boolean,
 				reDefineConstEnum: schemaPrimitiveValues.boolean,
+				banConstEnum: schemaPrimitiveValues.boolean,
 				exportReferencedTypes: schemaPrimitiveValues.boolean,
 				reExportAllDeclarations: schemaPrimitiveValues.boolean,
 				excludePrivate: schemaPrimitiveValues.boolean,

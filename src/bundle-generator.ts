@@ -94,6 +94,11 @@ export interface OutputOptions {
 	reDefineConstEnum?: boolean;
 
 	/**
+	 * Ban const enums - if any const enum is encountered then bundle generation will fail.
+	 */
+	banConstEnum?: boolean;
+
+	/**
 	 * By default all interfaces, types and const enums are marked as exported even if they aren't exported directly.
 	 * This option allows you to disable this behavior so a node will be exported if it is exported from root source file only.
 	 */

@@ -10,7 +10,7 @@ import { TestCaseConfig } from './test-cases/test-case-config';
 interface TestCase {
 	name: string;
 	inputFileName: string;
-	outputFileContent: string;
+	outputFileContent?: string;
 	outputFileName: string;
 	config: TestCaseConfig;
 }
@@ -36,14 +36,21 @@ function getTestCases(): TestCase[] {
 			const inputFileName = fs.existsSync(tsFilePath) ? tsFilePath : dtsFilePath;
 
 			assert(fs.existsSync(inputFileName), `Input file doesn't exist for ${directoryName}`);
-			assert(fs.existsSync(outputFileName), `Output file doesn't exist for ${directoryName}`);
+
+			// eslint-disable-next-line @typescript-eslint/no-var-requires
+			const config = require(path.resolve(testCaseDir, 'config.ts')) as TestCaseConfig;
+
+			let outputFileContent;
+			if (!config.errorMessage) {
+				assert(fs.existsSync(outputFileName), `Output file doesn't exist for ${directoryName}`);
+				outputFileContent = fs.readFileSync(outputFileName, 'utf-8');
+			}
 
 			const result: TestCase = {
 				name: directoryName,
 				inputFileName,
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				config: require(path.resolve(testCaseDir, 'config.ts')) as TestCaseConfig,
-				outputFileContent: fs.readFileSync(outputFileName, 'utf-8'),
+				config: config,
+				outputFileContent,
 				outputFileName,
 			};
 
@@ -60,17 +67,25 @@ describe('Functional tests', () => {
 				outputOptions.noBanner = true;
 			}
 
-			const result = generateDtsBundle(
-				[
-					{
-						...testCase.config,
-						output: outputOptions,
-						filePath: testCase.inputFileName,
-					},
-				]
-			)[0];
+			let result: string | undefined;
+			let errorMessage: string | undefined;
+			try {
+				result = generateDtsBundle(
+					[
+						{
+							...testCase.config,
+							output: outputOptions,
+							filePath: testCase.inputFileName,
+						},
+					]
+				)[0];
+			} catch (e) {
+				errorMessage = (e as Error).message;
+			}
 
-			if (process.env.UPDATE_SNAPSHOT) {
+			if (testCase.config.errorMessage) {
+				assert.strictEqual(testCase.config.errorMessage, errorMessage);
+			} else if (process.env.UPDATE_SNAPSHOT) {
 				if (result !== testCase.outputFileContent) {
 					// eslint-disable-next-line no-console
 					console.log(testCase.name, 'output is different, rebasing to', testCase.outputFileName);

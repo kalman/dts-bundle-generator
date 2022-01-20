@@ -124,6 +124,11 @@ Config file might be either JSON file or JS file with CommonJS export of the con
                 reDefineConstEnum: false,
 
                 /**
+                 * Instead of declaring or preserving const enums, simply redefine them.
+                 */
+                banConstEnum: false,
+
+                /**
                  * Exports every exported declaration regardless of kind (interface, class, etc) but only if it's
                  * currently exported. Overrides --export-referenced-types.
                  */
